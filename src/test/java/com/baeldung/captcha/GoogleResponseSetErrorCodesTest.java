@@ -81,7 +81,7 @@ Validation:
 // ********RoostGPT********
 package com.baeldung.captcha;
 
-import com.baeldung.captcha.ErrorCode;  //The missing import
+import com.baeldung.captcha.GoogleResponse.ErrorCode;  //The missing import
 
 import org.junit.Before;
 import org.junit.Test;

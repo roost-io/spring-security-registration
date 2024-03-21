@@ -73,6 +73,7 @@ Details:
 // ********RoostGPT********
   package com.baeldung.captcha;
 
+import com.baeldung.captcha.GoogleResponse.ErrorCode;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertEquals;
 import org.junit.Before;
