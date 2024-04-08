@@ -1,6 +1,6 @@
 # Spring-security-registration
 
-Spring-security-registration repository is dedicated to unit testing Java code. This project emphasizes the importance of robust unit testing practices within a Spring framework environment. Here, we focus solely on the unit testing aspect of the application.
+Spring-security-registration is a github repository serves as a sample project designed to illustrate the process of using **RoostGPT (an AI-powered tool)** which streamlines the mechanism of creating test cases, enabling developers to improve code quality and accelerate development workflows.
 
 ## Overview
 
@@ -61,11 +61,17 @@ To run Maven tests for the Spring Boot Examples project, follow these steps:
 
      Replace `testMethodName` with the name of the test method you want to run.
 
+
+#### . Review Test Results: 
+After running the tests, review the output in the terminal. Maven will display information about the tests executed, including any failures or errors encountered.
+
 ## Acknowledgments
 
-We extend our sincere appreciation to RoostGPT for its invaluable contribution to the Spring Boot Examples project. RoostGPT's AI capabilities have significantly enhanced the efficiency and effectiveness of our unit testing process, enabling us to deliver high-quality software with confidence.
+We would like to acknowledge the following tools and resources used in the development of this project:
 
-We would also like to acknowledge the Spring framework community for providing robust tools and frameworks to facilitate effective unit testing practices. Together, these resources have empowered us to achieve our testing objectives and deliver reliable software solutions.
+- [RoostGPT](https://www.roost.ai/) - An AI Test Generator used for functional test and unit test generation.
+- [OpenAPI Generator](https://openapi-generator.tech/) - A tool used for generating source code from API specifications.
+- [Java Spring Boot](https://spring.io/projects/spring-boot) - The Spring Boot framework was instrumental in simplifying and accelerating the development of this project.
 
 Feel free to explore the repository to delve deeper into the unit testing strategies employed within the Spring Security Registration project. Happy testing!
 
