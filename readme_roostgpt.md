@@ -1,10 +1,10 @@
-# spring-security-registration
+# Spring-security-registration
 
-spring-security-registration repository is dedicated to unit testing Java code. This project emphasizes the importance of robust unit testing practices within a Spring framework environment. Here, we focus solely on the unit testing aspect of the application.
+Spring-security-registration repository is dedicated to unit testing Java code. This project emphasizes the importance of robust unit testing practices within a Spring framework environment. Here, we focus solely on the unit testing aspect of the application.
 
 ## Overview
 
-spring-security-registration demonstrates the significance of thorough unit testing in Java projects, particularly within the Spring framework. By prioritizing unit tests, this project aims to ensure the reliability and correctness of the implemented functionalities.
+Spring-security-registration demonstrates the significance of thorough unit testing in Java projects, particularly within the Spring framework. By prioritizing unit tests, this project aims to ensure the reliability and correctness of the implemented functionalities.
 
 
 ## Development Process
@@ -67,7 +67,7 @@ We extend our sincere appreciation to RoostGPT for its invaluable contribution t
 
 We would also like to acknowledge the Spring framework community for providing robust tools and frameworks to facilitate effective unit testing practices. Together, these resources have empowered us to achieve our testing objectives and deliver reliable software solutions.
 
-Feel free to explore the repository to delve deeper into the unit testing strategies employed within the Spring Boot Examples project. Happy testing!
+Feel free to explore the repository to delve deeper into the unit testing strategies employed within the Spring Security Registration project. Happy testing!
 
 ## Contact
 
