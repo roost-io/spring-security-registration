@@ -65,16 +65,6 @@ To run Maven tests for the Spring Boot Examples project, follow these steps:
 #### . Review Test Results: 
 After running the tests, review the output in the terminal. Maven will display information about the tests executed, including any failures or errors encountered.
 
-## Acknowledgments
-
-We would like to acknowledge the following tools and resources used in the development of this project:
-
-- [RoostGPT](https://www.roost.ai/) - An AI Test Generator used for functional test and unit test generation.
-- [OpenAPI Generator](https://openapi-generator.tech/) - A tool used for generating source code from API specifications.
-- [Java Spring Boot](https://spring.io/projects/spring-boot) - The Spring Boot framework was instrumental in simplifying and accelerating the development of this project.
-
-Feel free to explore the repository to delve deeper into the unit testing strategies employed within the Spring Security Registration project. Happy testing!
-
 ## Contact
 
 For more information about RoostGPT or our other products and services, please visit our website at [roost.ai](https://roost.ai) or contact us at [support@roost.ai](mailto:support@roost.ai).
