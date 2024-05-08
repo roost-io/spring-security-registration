@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DeviceService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">spring-security-login-and-registration</a> &gt; <a href="index.source.html" class="el_package">com.baeldung.service</a> &gt; <span class="el_source">DeviceService.java</span></div><h1>DeviceService.java</h1><pre class="source lang-java linenums">package com.baeldung.service;
+
+import com.baeldung.persistence.dao.DeviceMetadataRepository;
+import com.google.common.base.Strings;
+import com.maxmind.geoip2.DatabaseReader;
+import com.maxmind.geoip2.exception.GeoIp2Exception;
+import com.maxmind.geoip2.model.CityResponse;
+import com.baeldung.persistence.model.DeviceMetadata;
+import com.baeldung.persistence.model.User;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
+import org.springframework.context.NoSuchMessageException;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.stereotype.Component;
+import ua_parser.Client;
+import ua_parser.Parser;
+
+import jakarta.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.util.*;
+
+import static java.util.Objects.nonNull;
+
+@Component
+public class DeviceService {
+
+	private static final String UNKNOWN = &quot;UNKNOWN&quot;;
+
+	@Value(&quot;${support.email}&quot;)
+	private String from;
+
+	private DeviceMetadataRepository deviceMetadataRepository;
+
+	private DatabaseReader databaseReader;
+
+	private Parser parser;
+
+	private JavaMailSender mailSender;
+
+	private MessageSource messages;
+
+	public DeviceService(DeviceMetadataRepository deviceMetadataRepository,
+			@Qualifier(&quot;GeoIPCity&quot;) DatabaseReader databaseReader, Parser parser, JavaMailSender mailSender,
+<span class="nc" id="L47">			MessageSource messages) {</span>
+<span class="nc" id="L48">		this.deviceMetadataRepository = deviceMetadataRepository;</span>
+<span class="nc" id="L49">		this.databaseReader = databaseReader;</span>
+<span class="nc" id="L50">		this.parser = parser;</span>
+<span class="nc" id="L51">		this.mailSender = mailSender;</span>
+<span class="nc" id="L52">		this.messages = messages;</span>
+<span class="nc" id="L53">	}</span>
+
+	public void verifyDevice(User user, HttpServletRequest request) throws IOException, GeoIp2Exception {
+
+<span class="nc" id="L57">		String ip = extractIp(request);</span>
+<span class="nc" id="L58">		String location = getIpLocation(ip);</span>
+
+<span class="nc" id="L60">		String deviceDetails = getDeviceDetails(request.getHeader(&quot;user-agent&quot;));</span>
+
+<span class="nc" id="L62">		DeviceMetadata existingDevice = findExistingDevice(user.getId(), deviceDetails, location);</span>
+
+<span class="nc bnc" id="L64" title="All 2 branches missed.">		if (Objects.isNull(existingDevice)) {</span>
+<span class="nc" id="L65">			unknownDeviceNotification(deviceDetails, location, ip, user.getEmail(), request.getLocale());</span>
+
+<span class="nc" id="L67">			DeviceMetadata deviceMetadata = new DeviceMetadata();</span>
+<span class="nc" id="L68">			deviceMetadata.setUserId(user.getId());</span>
+<span class="nc" id="L69">			deviceMetadata.setLocation(location);</span>
+<span class="nc" id="L70">			deviceMetadata.setDeviceDetails(deviceDetails);</span>
+<span class="nc" id="L71">			deviceMetadata.setLastLoggedIn(new Date());</span>
+<span class="nc" id="L72">			deviceMetadataRepository.save(deviceMetadata);</span>
+<span class="nc" id="L73">		}</span>
+		else {
+<span class="nc" id="L75">			existingDevice.setLastLoggedIn(new Date());</span>
+<span class="nc" id="L76">			deviceMetadataRepository.save(existingDevice);</span>
+		}
+
+<span class="nc" id="L79">	}</span>
+
+	private String extractIp(HttpServletRequest request) {
+		String clientIp;
+<span class="nc" id="L83">		String clientXForwardedForIp = request.getHeader(&quot;x-forwarded-for&quot;);</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">		if (nonNull(clientXForwardedForIp)) {</span>
+<span class="nc" id="L85">			clientIp = parseXForwardedHeader(clientXForwardedForIp);</span>
+		}
+		else {
+<span class="nc" id="L88">			clientIp = request.getRemoteAddr();</span>
+		}
+
+<span class="nc" id="L91">		return clientIp;</span>
+	}
+
+	private String parseXForwardedHeader(String header) {
+<span class="nc" id="L95">		return header.split(&quot; *, *&quot;)[0];</span>
+	}
+
+	private String getDeviceDetails(String userAgent) {
+<span class="nc" id="L99">		String deviceDetails = UNKNOWN;</span>
+
+<span class="nc" id="L101">		Client client = parser.parse(userAgent);</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">		if (Objects.nonNull(client)) {</span>
+<span class="nc" id="L103">			deviceDetails = client.userAgent.family + &quot; &quot; + client.userAgent.major + &quot;.&quot; + client.userAgent.minor</span>
+					+ &quot; - &quot; + client.os.family + &quot; &quot; + client.os.major + &quot;.&quot; + client.os.minor;
+		}
+
+<span class="nc" id="L107">		return deviceDetails;</span>
+	}
+
+	private String getIpLocation(String ip) throws IOException, GeoIp2Exception {
+
+<span class="nc" id="L112">		String location = UNKNOWN;</span>
+
+<span class="nc" id="L114">		InetAddress ipAddress = InetAddress.getByName(ip);</span>
+
+<span class="nc" id="L116">		CityResponse cityResponse = databaseReader.city(ipAddress);</span>
+<span class="nc bnc" id="L117" title="All 4 branches missed.">		if (Objects.nonNull(cityResponse) &amp;&amp; Objects.nonNull(cityResponse.getCity())</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">				&amp;&amp; !Strings.isNullOrEmpty(cityResponse.getCity().getName())) {</span>
+
+<span class="nc" id="L120">			location = cityResponse.getCity().getName();</span>
+		}
+
+<span class="nc" id="L123">		return location;</span>
+	}
+
+	private DeviceMetadata findExistingDevice(Long userId, String deviceDetails, String location) {
+
+<span class="nc" id="L128">		List&lt;DeviceMetadata&gt; knownDevices = deviceMetadataRepository.findByUserId(userId);</span>
+
+<span class="nc bnc" id="L130" title="All 2 branches missed.">		for (DeviceMetadata existingDevice : knownDevices) {</span>
+<span class="nc bnc" id="L131" title="All 2 branches missed.">			if (existingDevice.getDeviceDetails().equals(deviceDetails)</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">					&amp;&amp; existingDevice.getLocation().equals(location)) {</span>
+<span class="nc" id="L133">				return existingDevice;</span>
+			}
+<span class="nc" id="L135">		}</span>
+
+<span class="nc" id="L137">		return null;</span>
+	}
+
+	private void unknownDeviceNotification(String deviceDetails, String location, String ip, String email,
+			Locale locale) {
+<span class="nc" id="L142">		final String subject = &quot;New Login Notification&quot;;</span>
+<span class="nc" id="L143">		final SimpleMailMessage notification = new SimpleMailMessage();</span>
+<span class="nc" id="L144">		notification.setTo(email);</span>
+<span class="nc" id="L145">		notification.setSubject(subject);</span>
+
+<span class="nc" id="L147">		String text = getMessage(&quot;message.login.notification.deviceDetails&quot;, locale) + &quot; &quot; + deviceDetails + &quot;\n&quot;</span>
+<span class="nc" id="L148">				+ getMessage(&quot;message.login.notification.location&quot;, locale) + &quot; &quot; + location + &quot;\n&quot;</span>
+<span class="nc" id="L149">				+ getMessage(&quot;message.login.notification.ip&quot;, locale) + &quot; &quot; + ip;</span>
+
+<span class="nc" id="L151">		notification.setText(text);</span>
+<span class="nc" id="L152">		notification.setFrom(from);</span>
+
+<span class="nc" id="L154">		mailSender.send(notification);</span>
+<span class="nc" id="L155">	}</span>
+
+	private String getMessage(String code, Locale locale) {
+		try {
+<span class="nc" id="L159">			return messages.getMessage(code, null, locale);</span>
+
+		}
+<span class="nc" id="L162">		catch (NoSuchMessageException ex) {</span>
+<span class="nc" id="L163">			return messages.getMessage(code, null, Locale.ENGLISH);</span>
+		}
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
