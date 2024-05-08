@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Role.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">spring-security-login-and-registration</a> &gt; <a href="index.source.html" class="el_package">com.baeldung.persistence.model</a> &gt; <span class="el_source">Role.java</span></div><h1>Role.java</h1><pre class="source lang-java linenums">package com.baeldung.persistence.model;
+
+import java.util.Collection;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+
+@Entity
+public class Role {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO)
+	private Long id;
+
+	@ManyToMany(mappedBy = &quot;roles&quot;)
+	private Collection&lt;User&gt; users;
+
+	@ManyToMany
+	@JoinTable(name = &quot;roles_privileges&quot;, joinColumns = @JoinColumn(name = &quot;role_id&quot;, referencedColumnName = &quot;id&quot;),
+			inverseJoinColumns = @JoinColumn(name = &quot;privilege_id&quot;, referencedColumnName = &quot;id&quot;))
+	private Collection&lt;Privilege&gt; privileges;
+
+	private String name;
+
+	public Role() {
+<span class="nc" id="L31">		super();</span>
+<span class="nc" id="L32">	}</span>
+
+	public Role(final String name) {
+<span class="nc" id="L35">		super();</span>
+<span class="nc" id="L36">		this.name = name;</span>
+<span class="nc" id="L37">	}</span>
+
+	//
+
+	public Long getId() {
+<span class="nc" id="L42">		return id;</span>
+	}
+
+	public void setId(final Long id) {
+<span class="nc" id="L46">		this.id = id;</span>
+<span class="nc" id="L47">	}</span>
+
+	public String getName() {
+<span class="nc" id="L50">		return name;</span>
+	}
+
+	public void setName(final String name) {
+<span class="nc" id="L54">		this.name = name;</span>
+<span class="nc" id="L55">	}</span>
+
+	public Collection&lt;User&gt; getUsers() {
+<span class="nc" id="L58">		return users;</span>
+	}
+
+	public void setUsers(final Collection&lt;User&gt; users) {
+<span class="nc" id="L62">		this.users = users;</span>
+<span class="nc" id="L63">	}</span>
+
+	public Collection&lt;Privilege&gt; getPrivileges() {
+<span class="nc" id="L66">		return privileges;</span>
+	}
+
+	public void setPrivileges(final Collection&lt;Privilege&gt; privileges) {
+<span class="nc" id="L70">		this.privileges = privileges;</span>
+<span class="nc" id="L71">	}</span>
+
+	@Override
+	public int hashCode() {
+<span class="nc" id="L75">		final int prime = 31;</span>
+<span class="nc" id="L76">		int result = 1;</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">		result = prime * result + ((getName() == null) ? 0 : getName().hashCode());</span>
+<span class="nc" id="L78">		return result;</span>
+	}
+
+	@Override
+	public boolean equals(final Object obj) {
+<span class="nc bnc" id="L83" title="All 2 branches missed.">		if (this == obj) {</span>
+<span class="nc" id="L84">			return true;</span>
+		}
+<span class="nc bnc" id="L86" title="All 2 branches missed.">		if (obj == null) {</span>
+<span class="nc" id="L87">			return false;</span>
+		}
+<span class="nc bnc" id="L89" title="All 2 branches missed.">		if (getClass() != obj.getClass()) {</span>
+<span class="nc" id="L90">			return false;</span>
+		}
+<span class="nc" id="L92">		final Role role = (Role) obj;</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">		if (!getName().equals(role.getName())) {</span>
+<span class="nc" id="L94">			return false;</span>
+		}
+<span class="nc" id="L96">		return true;</span>
+	}
+
+	@Override
+	public String toString() {
+<span class="nc" id="L101">		final StringBuilder builder = new StringBuilder();</span>
+<span class="nc" id="L102">		builder.append(&quot;Role [name=&quot;).append(name).append(&quot;]&quot;).append(&quot;[id=&quot;).append(id).append(&quot;]&quot;);</span>
+<span class="nc" id="L103">		return builder.toString();</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

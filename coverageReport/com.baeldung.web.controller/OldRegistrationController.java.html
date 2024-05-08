@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OldRegistrationController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">spring-security-login-and-registration</a> &gt; <a href="index.source.html" class="el_package">com.baeldung.web.controller</a> &gt; <span class="el_source">OldRegistrationController.java</span></div><h1>OldRegistrationController.java</h1><pre class="source lang-java linenums">package com.baeldung.web.controller;
+
+import com.baeldung.persistence.model.PasswordResetToken;
+import com.baeldung.persistence.model.User;
+import com.baeldung.persistence.model.VerificationToken;
+import com.baeldung.registration.OnRegistrationCompleteEvent;
+import com.baeldung.service.IUserService;
+import com.baeldung.web.dto.UserDto;
+import com.baeldung.web.error.UserAlreadyExistException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.MessageSource;
+import org.springframework.core.env.Environment;
+import org.springframework.mail.MailAuthenticationException;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.Errors;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.ModelAndView;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import java.util.Calendar;
+import java.util.Locale;
+import java.util.UUID;
+
+@Controller
+@RequestMapping(&quot;/old&quot;)
+public class OldRegistrationController {
+
+<span class="nc" id="L44">	private final Logger LOGGER = LoggerFactory.getLogger(getClass());</span>
+
+	@Autowired
+	private IUserService userService;
+
+	@Autowired
+	private MessageSource messages;
+
+	@Autowired
+	private JavaMailSender mailSender;
+
+	@Autowired
+	private ApplicationEventPublisher eventPublisher;
+
+	@Autowired
+	private UserDetailsService userDetailsService;
+
+	@Autowired
+	private Environment env;
+
+	public OldRegistrationController() {
+<span class="nc" id="L65">		super();</span>
+<span class="nc" id="L66">	}</span>
+
+	// API
+
+	@GetMapping(&quot;/user/registration&quot;)
+	public String showRegistrationForm(final HttpServletRequest request, final Model model) {
+<span class="nc" id="L72">		LOGGER.debug(&quot;Rendering registration page.&quot;);</span>
+<span class="nc" id="L73">		final UserDto accountDto = new UserDto();</span>
+<span class="nc" id="L74">		model.addAttribute(&quot;user&quot;, accountDto);</span>
+<span class="nc" id="L75">		return &quot;registration&quot;;</span>
+	}
+
+	@GetMapping(&quot;/registrationConfirm&quot;)
+	public String confirmRegistration(final HttpServletRequest request, final Model model,
+			@RequestParam(&quot;token&quot;) final String token) {
+<span class="nc" id="L81">		final Locale locale = request.getLocale();</span>
+
+<span class="nc" id="L83">		final VerificationToken verificationToken = userService.getVerificationToken(token);</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">		if (verificationToken == null) {</span>
+<span class="nc" id="L85">			final String message = messages.getMessage(&quot;auth.message.invalidToken&quot;, null, locale);</span>
+<span class="nc" id="L86">			model.addAttribute(&quot;message&quot;, message);</span>
+<span class="nc" id="L87">			return &quot;redirect:/badUser.html?lang=&quot; + locale.getLanguage();</span>
+		}
+
+<span class="nc" id="L90">		final User user = verificationToken.getUser();</span>
+<span class="nc" id="L91">		final Calendar cal = Calendar.getInstance();</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">		if ((verificationToken.getExpiryDate().getTime() - cal.getTime().getTime()) &lt;= 0) {</span>
+<span class="nc" id="L93">			model.addAttribute(&quot;message&quot;, messages.getMessage(&quot;auth.message.expired&quot;, null, locale));</span>
+<span class="nc" id="L94">			model.addAttribute(&quot;expired&quot;, true);</span>
+<span class="nc" id="L95">			model.addAttribute(&quot;token&quot;, token);</span>
+<span class="nc" id="L96">			return &quot;redirect:/badUser.html?lang=&quot; + locale.getLanguage();</span>
+		}
+
+<span class="nc" id="L99">		user.setEnabled(true);</span>
+<span class="nc" id="L100">		userService.saveRegisteredUser(user);</span>
+<span class="nc" id="L101">		model.addAttribute(&quot;message&quot;, messages.getMessage(&quot;message.accountVerified&quot;, null, locale));</span>
+<span class="nc" id="L102">		return &quot;redirect:/login.html?lang=&quot; + locale.getLanguage();</span>
+	}
+
+	@PostMapping(&quot;/user/registration&quot;)
+	public ModelAndView registerUserAccount(@ModelAttribute(&quot;user&quot;) @Valid final UserDto userDto,
+			final HttpServletRequest request, final Errors errors) {
+<span class="nc" id="L108">		LOGGER.debug(&quot;Registering user account with information: {}&quot;, userDto);</span>
+
+		try {
+<span class="nc" id="L111">			final User registered = userService.registerNewUserAccount(userDto);</span>
+
+<span class="nc" id="L113">			final String appUrl = &quot;http://&quot; + request.getServerName() + &quot;:&quot; + request.getServerPort()</span>
+<span class="nc" id="L114">					+ request.getContextPath();</span>
+<span class="nc" id="L115">			eventPublisher.publishEvent(new OnRegistrationCompleteEvent(registered, request.getLocale(), appUrl));</span>
+		}
+<span class="nc" id="L117">		catch (final UserAlreadyExistException uaeEx) {</span>
+<span class="nc" id="L118">			ModelAndView mav = new ModelAndView(&quot;registration&quot;, &quot;user&quot;, userDto);</span>
+<span class="nc" id="L119">			String errMessage = messages.getMessage(&quot;message.regError&quot;, null, request.getLocale());</span>
+<span class="nc" id="L120">			mav.addObject(&quot;message&quot;, errMessage);</span>
+<span class="nc" id="L121">			return mav;</span>
+		}
+<span class="nc" id="L123">		catch (final RuntimeException ex) {</span>
+<span class="nc" id="L124">			LOGGER.warn(&quot;Unable to register user&quot;, ex);</span>
+<span class="nc" id="L125">			return new ModelAndView(&quot;emailError&quot;, &quot;user&quot;, userDto);</span>
+<span class="nc" id="L126">		}</span>
+<span class="nc" id="L127">		return new ModelAndView(&quot;successRegister&quot;, &quot;user&quot;, userDto);</span>
+	}
+
+	@GetMapping(&quot;/user/resendRegistrationToken&quot;)
+	public String resendRegistrationToken(final HttpServletRequest request, final Model model,
+			@RequestParam(&quot;token&quot;) final String existingToken) {
+<span class="nc" id="L133">		final Locale locale = request.getLocale();</span>
+<span class="nc" id="L134">		final VerificationToken newToken = userService.generateNewVerificationToken(existingToken);</span>
+<span class="nc" id="L135">		final User user = userService.getUser(newToken.getToken());</span>
+		try {
+<span class="nc" id="L137">			final String appUrl = &quot;http://&quot; + request.getServerName() + &quot;:&quot; + request.getServerPort()</span>
+<span class="nc" id="L138">					+ request.getContextPath();</span>
+<span class="nc" id="L139">			final SimpleMailMessage email = constructResetVerificationTokenEmail(appUrl, request.getLocale(), newToken,</span>
+					user);
+<span class="nc" id="L141">			mailSender.send(email);</span>
+		}
+<span class="nc" id="L143">		catch (final MailAuthenticationException e) {</span>
+<span class="nc" id="L144">			LOGGER.debug(&quot;MailAuthenticationException&quot;, e);</span>
+<span class="nc" id="L145">			return &quot;redirect:/emailError.html?lang=&quot; + locale.getLanguage();</span>
+		}
+<span class="nc" id="L147">		catch (final Exception e) {</span>
+<span class="nc" id="L148">			LOGGER.debug(e.getLocalizedMessage(), e);</span>
+<span class="nc" id="L149">			model.addAttribute(&quot;message&quot;, e.getLocalizedMessage());</span>
+<span class="nc" id="L150">			return &quot;redirect:/login.html?lang=&quot; + locale.getLanguage();</span>
+<span class="nc" id="L151">		}</span>
+<span class="nc" id="L152">		model.addAttribute(&quot;message&quot;, messages.getMessage(&quot;message.resendToken&quot;, null, locale));</span>
+<span class="nc" id="L153">		return &quot;redirect:/login.html?lang=&quot; + locale.getLanguage();</span>
+	}
+
+	@PostMapping(&quot;/user/resetPassword&quot;)
+	public String resetPassword(final HttpServletRequest request, final Model model,
+			@RequestParam(&quot;email&quot;) final String userEmail) {
+<span class="nc" id="L159">		final User user = userService.findUserByEmail(userEmail);</span>
+<span class="nc bnc" id="L160" title="All 2 branches missed.">		if (user == null) {</span>
+<span class="nc" id="L161">			model.addAttribute(&quot;message&quot;, messages.getMessage(&quot;message.userNotFound&quot;, null, request.getLocale()));</span>
+<span class="nc" id="L162">			return &quot;redirect:/login.html?lang=&quot; + request.getLocale().getLanguage();</span>
+		}
+
+<span class="nc" id="L165">		final String token = UUID.randomUUID().toString();</span>
+<span class="nc" id="L166">		userService.createPasswordResetTokenForUser(user, token);</span>
+		try {
+<span class="nc" id="L168">			final String appUrl = &quot;http://&quot; + request.getServerName() + &quot;:&quot; + request.getServerPort()</span>
+<span class="nc" id="L169">					+ request.getContextPath();</span>
+<span class="nc" id="L170">			final SimpleMailMessage email = constructResetTokenEmail(appUrl, request.getLocale(), token, user);</span>
+<span class="nc" id="L171">			mailSender.send(email);</span>
+		}
+<span class="nc" id="L173">		catch (final MailAuthenticationException e) {</span>
+<span class="nc" id="L174">			LOGGER.debug(&quot;MailAuthenticationException&quot;, e);</span>
+<span class="nc" id="L175">			return &quot;redirect:/emailError.html?lang=&quot; + request.getLocale().getLanguage();</span>
+		}
+<span class="nc" id="L177">		catch (final Exception e) {</span>
+<span class="nc" id="L178">			LOGGER.debug(e.getLocalizedMessage(), e);</span>
+<span class="nc" id="L179">			model.addAttribute(&quot;message&quot;, e.getLocalizedMessage());</span>
+<span class="nc" id="L180">			return &quot;redirect:/login.html?lang=&quot; + request.getLocale().getLanguage();</span>
+<span class="nc" id="L181">		}</span>
+<span class="nc" id="L182">		model.addAttribute(&quot;message&quot;, messages.getMessage(&quot;message.resetPasswordEmail&quot;, null, request.getLocale()));</span>
+<span class="nc" id="L183">		return &quot;redirect:/login.html?lang=&quot; + request.getLocale().getLanguage();</span>
+	}
+
+	@GetMapping(&quot;/user/changePassword&quot;)
+	public String changePassword(final HttpServletRequest request, final Model model, @RequestParam(&quot;id&quot;) final long id,
+			@RequestParam(&quot;token&quot;) final String token) {
+<span class="nc" id="L189">		final Locale locale = request.getLocale();</span>
+
+<span class="nc" id="L191">		final PasswordResetToken passToken = userService.getPasswordResetToken(token);</span>
+<span class="nc bnc" id="L192" title="All 4 branches missed.">		if (passToken == null || passToken.getUser().getId() != id) {</span>
+<span class="nc" id="L193">			final String message = messages.getMessage(&quot;auth.message.invalidToken&quot;, null, locale);</span>
+<span class="nc" id="L194">			model.addAttribute(&quot;message&quot;, message);</span>
+<span class="nc" id="L195">			return &quot;redirect:/login.html?lang=&quot; + locale.getLanguage();</span>
+		}
+
+<span class="nc" id="L198">		final Calendar cal = Calendar.getInstance();</span>
+<span class="nc bnc" id="L199" title="All 2 branches missed.">		if ((passToken.getExpiryDate().getTime() - cal.getTime().getTime()) &lt;= 0) {</span>
+<span class="nc" id="L200">			model.addAttribute(&quot;message&quot;, messages.getMessage(&quot;auth.message.expired&quot;, null, locale));</span>
+<span class="nc" id="L201">			return &quot;redirect:/login.html?lang=&quot; + locale.getLanguage();</span>
+		}
+
+<span class="nc" id="L204">		final Authentication auth = new UsernamePasswordAuthenticationToken(passToken.getUser(), null,</span>
+<span class="nc" id="L205">				userDetailsService.loadUserByUsername(passToken.getUser().getEmail()).getAuthorities());</span>
+<span class="nc" id="L206">		SecurityContextHolder.getContext().setAuthentication(auth);</span>
+
+<span class="nc" id="L208">		return &quot;redirect:/updatePassword.html?lang=&quot; + locale.getLanguage();</span>
+	}
+
+	@PostMapping(&quot;/user/savePassword&quot;)
+	@PreAuthorize(&quot;hasRole('READ_PRIVILEGE')&quot;)
+	public String savePassword(final HttpServletRequest request, final Model model,
+			@RequestParam(&quot;password&quot;) final String password) {
+<span class="nc" id="L215">		final Locale locale = request.getLocale();</span>
+
+<span class="nc" id="L217">		final User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();</span>
+<span class="nc" id="L218">		userService.changeUserPassword(user, password);</span>
+<span class="nc" id="L219">		model.addAttribute(&quot;message&quot;, messages.getMessage(&quot;message.resetPasswordSuc&quot;, null, locale));</span>
+<span class="nc" id="L220">		return &quot;redirect:/login.html?lang=&quot; + locale;</span>
+	}
+
+	// NON-API
+
+	private SimpleMailMessage constructResetVerificationTokenEmail(final String contextPath, final Locale locale,
+			final VerificationToken newToken, final User user) {
+<span class="nc" id="L227">		final String confirmationUrl = contextPath + &quot;/old/registrationConfirm.html?token=&quot; + newToken.getToken();</span>
+<span class="nc" id="L228">		final String message = messages.getMessage(&quot;message.resendToken&quot;, null, locale);</span>
+<span class="nc" id="L229">		final SimpleMailMessage email = new SimpleMailMessage();</span>
+<span class="nc" id="L230">		email.setSubject(&quot;Resend Registration Token&quot;);</span>
+<span class="nc" id="L231">		email.setText(message + &quot; \r\n&quot; + confirmationUrl);</span>
+<span class="nc" id="L232">		email.setTo(user.getEmail());</span>
+<span class="nc" id="L233">		email.setFrom(env.getProperty(&quot;support.email&quot;));</span>
+<span class="nc" id="L234">		return email;</span>
+	}
+
+	private SimpleMailMessage constructResetTokenEmail(final String contextPath, final Locale locale,
+			final String token, final User user) {
+<span class="nc" id="L239">		final String url = contextPath + &quot;/old/user/changePassword?id=&quot; + user.getId() + &quot;&amp;token=&quot; + token;</span>
+<span class="nc" id="L240">		final String message = messages.getMessage(&quot;message.resetPassword&quot;, null, locale);</span>
+<span class="nc" id="L241">		final SimpleMailMessage email = new SimpleMailMessage();</span>
+<span class="nc" id="L242">		email.setTo(user.getEmail());</span>
+<span class="nc" id="L243">		email.setSubject(&quot;Reset Password&quot;);</span>
+<span class="nc" id="L244">		email.setText(message + &quot; \r\n&quot; + url);</span>
+<span class="nc" id="L245">		email.setFrom(env.getProperty(&quot;support.email&quot;));</span>
+<span class="nc" id="L246">		return email;</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>
